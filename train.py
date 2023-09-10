@@ -12,11 +12,11 @@ import re
 from RandomCube import *
 
 
-print("创建模型中...")
+print("Creating Model...")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = CubeNN(3).to(device)
 
-print("读取保存记录中...")
+print("Read Saved model...")
 epoch = 0
 file = None
 for item in os.listdir():
@@ -28,11 +28,11 @@ for item in os.listdir():
                 epoch = temp_num
                 file = item
 if file != None:
-    print(f"发现保存文件{file},加载中...")
+    print(f"{file} found, Loading...")
     model.load_state_dict(torch.load(file))
-    print(f"完成加载保存模型,迭代次数：{epoch}")
+    print(f"Model loading completed, epoch={epoch}")
 else:
-    print("未读取到保存模型，开始新的训练")
+    print("Unable to find the saved model, start a new model training")
     
 
 
@@ -49,7 +49,7 @@ def input_int(display,min_value=-float("inf"),max_value=float("inf")):
             if min_value<=value<=max_value:
                 return value
             else:
-                print(f"范围在{min_value}~{max_value}之间")
+                print(f"Input value between {min_value}~{max_value}")
     
 
 df = CubeDataset(3)
@@ -63,17 +63,17 @@ def train_model(epoch):
     model.eval()
 
     move_count = len(children)
-    print("        开始迭代价值")
+    print("        Start calculating value:")
     with torch.no_grad():
         y_result = model(children[0][0],children[0][1],children[0][2])
-        print(f"        迭代价值[1/{move_count}]")
+        print(f"                [1/{move_count}]")
         for i in range(1, move_count):
             next_result= model(children[i][0],children[i][1],children[i][2])
             y_results= torch.cat((y_result, next_result), dim=1)
             y_result, _ = torch.min(y_results, dim=1, keepdim=True)
 
 
-            print(f"        迭代价值[{i+1}/{move_count}]")
+            print(f"                [{i+1}/{move_count}]")
 
         y_result= y_result+1
         y_result = torch.cat((cost_0, y_result), dim=0)    
@@ -100,11 +100,11 @@ def train_model(epoch):
 
 
 while(True):
-    total_epochs = input_int(f"输入迭代次数，已迭代{epoch}次：")
+    total_epochs = input_int(f"Please enter the target epoch number，current: {epoch}：")
     if total_epochs <= epoch:
         break
-    dataset_size = input_int("请输入数据集大小：",1,3000000) 
-    move_depth = input_int("请输入深度：",1,200)    
+    dataset_size = input_int("Please enter the data set size：",1,3000000) 
+    move_depth = input_int("Please enter the maximum number of scrambled steps：",1,200)    
     need_new_dataset = True
     for epoch in range(epoch, total_epochs):
         
@@ -112,12 +112,12 @@ while(True):
         
         
         if(need_new_dataset):
-            print(f"生成新数据中,深度={move_depth}...")
+            print(f"Generate new data...")
             with torch.no_grad():
                 cubes, children = df.get_train_dataset(dataset_size,move_depth,device)
                 goals,cost_0 = df.get_goal_state(dataset_size,device)
                 chidren_with_goal = (torch.cat((goals[0], cubes[0]),dim=0).detach(), torch.cat((goals[1], cubes[1]), dim=1).detach(),torch.cat((goals[2], cubes[2]), dim=1).detach())
-            print("数据生成完成")
+            print("Data generation completed!")
         
 
         print(f'Start Epoch[{epoch+1}/{total_epochs}]')
